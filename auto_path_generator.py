@@ -91,8 +91,17 @@ class MAVLinkConnection:
         print(f"{len(waypoints)} waypoint yüklendi")
     
     
+    def start_mission(self):
+        #görev başlatma
+        self.connection.mav.command_long_send(
+            self.connection.target_system,
+            self.connection.target_component,
+            mavutil.mavlink.MAV_CMD_MISSION_START,
+            0, 0, 0, 0, 0, 0, 0, 0)
+        self.connection.recv_match(type=['COMMAND_ACK'], blocking=True)
+        print("Misyon başlatıldı")
     
-    
+
 
 def main():
     mavlink_connection = MAVLinkConnection()
