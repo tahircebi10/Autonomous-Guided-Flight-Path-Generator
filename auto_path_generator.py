@@ -270,6 +270,7 @@ def convert_coordinate(coord_str):
             
 def main():
     print("Kozmos İHA Kontrol Sistemi")
+    print("Lütfen hedef koordinatları girin:")
     uav = KozmosUAVControl()
     
     try:
