@@ -21,6 +21,19 @@ class MAVLinkConnection:
         for msg_type in important_messages:
             message = self.connection.recv_match(type=msg_type, blocking=True)
             print(f"{msg_type}: {message.to_dict()}" if message else f"No message for {msg_type}")
+            
+    def get_position(self):
+        #anlık konum bilgilerini almak için
+        msg = self.connection.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
+        if msg:
+            lat = msg.lat / 1e7
+            lon = msg.lon / 1e7
+            alt = msg.relative_alt / 1000
+            return (lat, lon, alt)
+        else:
+            print("No GLOBAL_POSITION_INT message received")
+        return None
+    
 
 def main():
     mavlink_connection = MAVLinkConnection()
