@@ -21,5 +21,10 @@ class MAVLinkConnection:
             print(f"Veri {i+1}: {msg.get_type()} | {msg.to_dict()}")
 
 
+def main():
+    print("Kozmos İHA Kontrol Sistemi")
+    connection = MAVLinkConnection()
+    connection.test_connection()
+
 if __name__ == "__main__":
     main()
