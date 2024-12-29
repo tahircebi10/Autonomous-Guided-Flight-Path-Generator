@@ -259,16 +259,33 @@ class KozmosUAVControl:
                     break
             time.sleep(0.1)
 
+#virgül ile girilen koordinatı noktalı formata çevirme
 def convert_coordinate(coord_str):
     """Virgüllü koordinatı noktalı formata çevir"""
     try:
         return float(coord_str.replace(',', '.'))
     except ValueError:
-        raise ValueError("Geçersiz koordinat formatı!")           
+        raise ValueError("Geçersiz koordinat formatı!")
+
             
 def main():
-    mavlink_connection = MAVLinkConnection()
-    mavlink_connection.test_connection()
+    print("Kozmos İHA Kontrol Sistemi")
+    uav = KozmosUAVControl()
+    
+    try:
+        target_lat = convert_coordinate(input("Hedef Enlem: "))
+        target_lon = convert_coordinate(input("Hedef Boylam: "))
+        target_alt = convert_coordinate(input("Hedef Yükseklik (m): "))
+        
+        uav.navigate_to_target(target_lat, target_lon, target_alt)
+        
+        plt.ioff()
+        plt.show()
+        
+    except ValueError as e:
+        print(f"Hata: {e}")
+    except KeyboardInterrupt:
+        print("\nProgram sonlandırılıyor...")
 
 if __name__ == "__main__":
     main()
