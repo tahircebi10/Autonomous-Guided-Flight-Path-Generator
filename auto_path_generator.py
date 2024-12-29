@@ -257,8 +257,15 @@ class KozmosUAVControl:
                 if dist < 5:
                     print("\nHedefe ulaşıldı!")
                     break
-            
             time.sleep(0.1)
+
+def convert_coordinate(coord_str):
+    """Virgüllü koordinatı noktalı formata çevir"""
+    try:
+        return float(coord_str.replace(',', '.'))
+    except ValueError:
+        raise ValueError("Geçersiz koordinat formatı!")           
+            
 def main():
     mavlink_connection = MAVLinkConnection()
     mavlink_connection.test_connection()
