@@ -165,6 +165,53 @@ class FlightPathCalculator:
         
         waypoints.append(target_pos)  # Hedef nokta
         return waypoints    
+    
+class FlightVisualizer:
+    def __init__(self):
+        plt.ion()
+        self.fig = plt.figure(figsize=(12, 8))
+        self.ax = self.fig.add_subplot(111, projection='3d')
+        self.actual_path = []
+
+    def update_plot(self, current_pos, waypoints):
+        self.ax.clear()
+        
+        # Waypoint'leri birleştiren çizgi
+        lats, lons, alts = zip(*waypoints)
+        self.ax.plot(lons, lats, alts, 'r--', label='Planlanan Rota')
+        
+        # Waypoint'leri işaretle
+        for i, wp in enumerate(waypoints):
+            if i == 0:
+                label = 'Başlangıç'
+                color = 'green'
+            elif i == len(waypoints) - 1:
+                label = 'Hedef'
+                color = 'red'
+            else:
+                label = f'WP{i}'
+                color = 'orange'
+            
+            self.ax.scatter(wp[1], wp[0], wp[2], 
+                          color=color, s=100, label=label)
+        
+        # Gerçek rotayı çiz
+        if self.actual_path:
+            act_lats, act_lons, act_alts = zip(*self.actual_path)
+            self.ax.plot(act_lons, act_lats, act_alts, 'b-', label='Gerçek Rota')
+        
+        # Mevcut konumu işaretle
+        if current_pos:
+            self.ax.scatter(current_pos[1], current_pos[0], current_pos[2], 
+                          color='blue', s=100, label='Mevcut Konum')
+        
+        self.ax.set_xlabel('Boylam')
+        self.ax.set_ylabel('Enlem')
+        self.ax.set_zlabel('Yükseklik (m)')
+        self.ax.legend()
+        
+        plt.draw()
+        plt.pause(0.1)
 
 def main():
     mavlink_connection = MAVLinkConnection()
