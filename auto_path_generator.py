@@ -100,8 +100,71 @@ class MAVLinkConnection:
             0, 0, 0, 0, 0, 0, 0, 0)
         self.connection.recv_match(type=['COMMAND_ACK'], blocking=True)
         print("Misyon başlatıldı")
-    
+        
+class FlightPathCalculator:
+    @staticmethod
+    def haversine_distance(lat1, lon1, lat2, lon2):
+        #iki nokta arası mesafe hesaplama
+        R = 6371000
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+        delta_phi = math.radians(lat2 - lat1)
+        delta_lambda = math.radians(lon2 - lon1)
 
+        a = math.sin(delta_phi/2)**2 + \
+            math.cos(phi1) * math.cos(phi2) * \
+            math.sin(delta_lambda/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+        return R * c
+
+    @staticmethod
+    def calculate_bearing(lat1, lon1, lat2, lon2):
+        #iki nokta arası yön hesaplama
+        lat1, lon1 = map(math.radians, [lat1, lon1])
+        lat2, lon2 = map(math.radians, [lat2, lon2])
+
+        y = math.sin(lon2-lon1) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - \
+            math.sin(lat1) * math.cos(lat2) * math.cos(lon2-lon1)
+        
+        return math.degrees(math.atan2(y, x))
+
+    @staticmethod
+    def calculate_waypoints(start_pos, target_pos):
+        #Başlangıç ve hedef noktalar arasında ara waypointler
+        waypoints = [start_pos] 
+        
+        total_distance = FlightPathCalculator.haversine_distance(
+            start_pos[0], start_pos[1], target_pos[0], target_pos[1])
+        
+        # Bearing hesapla
+        bearing = FlightPathCalculator.calculate_bearing(
+            start_pos[0], start_pos[1], target_pos[0], target_pos[1])
+        
+        # 3 ara nokta oluştur
+        for i in range(1, 4):
+            fraction = i / 4  #bu kısım daha anlamlı matematiksel olabilir
+            
+            # Ara nokta koordinatlarını hesapla
+            lat1 = math.radians(start_pos[0])
+            lon1 = math.radians(start_pos[1])
+            ang_dist = (total_distance * fraction) / 6371000
+
+            lat2 = math.asin(math.sin(lat1) * math.cos(ang_dist) + 
+                           math.cos(lat1) * math.sin(ang_dist) * math.cos(math.radians(bearing)))
+            
+            lon2 = lon1 + math.atan2(math.sin(math.radians(bearing)) * math.sin(ang_dist) * math.cos(lat1),
+                                    math.cos(ang_dist) - math.sin(lat1) * math.sin(lat2))
+            
+            # Yükseklik interpolasyonu
+            alt = start_pos[2] + (target_pos[2] - start_pos[2]) * fraction
+            
+            waypoint = (math.degrees(lat2), math.degrees(lon2), alt)
+            waypoints.append(waypoint)
+        
+        waypoints.append(target_pos)  # Hedef nokta
+        return waypoints    
 
 def main():
     mavlink_connection = MAVLinkConnection()
