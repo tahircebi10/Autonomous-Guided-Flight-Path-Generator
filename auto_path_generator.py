@@ -213,6 +213,52 @@ class FlightVisualizer:
         plt.draw()
         plt.pause(0.1)
 
+class KozmosUAVControl:
+    def __init__(self):
+        self.mavlink = MAVLinkConnection()
+        self.calculator = FlightPathCalculator()
+        self.visualizer = FlightVisualizer()
+
+    def navigate_to_target(self, target_lat, target_lon, target_alt):
+        current_pos = self.mavlink.get_position()
+        if not current_pos:
+            print("Konum alınamadı!")
+            return
+
+        target_pos = (target_lat, target_lon, target_alt)
+        print(f"\nMevcut konum: Lat={current_pos[0]:.6f}, Lon={current_pos[1]:.6f}, Alt={current_pos[2]:.1f}m")
+        print(f"Hedef konum: Lat={target_lat:.6f}, Lon={target_lon:.6f}, Alt={target_alt:.1f}m")
+
+        if not self.mavlink.set_guided_mode():
+            print("GUIDED moda geçilemedi!")
+            return
+
+        # Waypoint'leri hesaplama
+        waypoints = self.calculator.calculate_waypoints(current_pos, target_pos)
+        print(f"Waypoint'ler hesaplandı: {len(waypoints)} nokta")
+
+        # Waypoint'leri yükleme ve başlama
+        self.mavlink.upload_waypoints(waypoints)
+        self.mavlink.start_mission()
+
+        # Uçuşu takip etme
+        while True:
+            current = self.mavlink.get_position()
+            if current:
+                self.visualizer.actual_path.append(current)
+                self.visualizer.update_plot(current, waypoints)
+                
+                dist = self.calculator.haversine_distance(
+                    current[0], current[1], target_lat, target_lon)
+                
+                print(f"\rKonum: Lat={current[0]:.6f}, Lon={current[1]:.6f}, " + 
+                      f"Alt={current[2]:.1f}m, Mesafe={dist:.1f}m", end='')
+                
+                if dist < 5:
+                    print("\nHedefe ulaşıldı!")
+                    break
+            
+            time.sleep(0.1)
 def main():
     mavlink_connection = MAVLinkConnection()
     mavlink_connection.test_connection()
