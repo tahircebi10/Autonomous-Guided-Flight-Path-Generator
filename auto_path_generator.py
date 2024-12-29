@@ -16,10 +16,15 @@ class MAVLinkConnection:
         print("MAVLink bağlantısı başarılıyla yapıldı")
         #test için bir fonksiyon ekleyeceğim genel formatı göstermek adına alınan veriler
     def test_connection(self):
-        for i in range(3): # 3 kere veri alıyoruz
-            msg = self.connection.recv_match(blocking=True)
-            print(f"Veri {i+1}: {msg.get_type()} | {msg.to_dict()}")
+        important_messages = ['HEARTBEAT', 'GLOBAL_POSITION_INT', 'ATTITUDE', 'VFR_HUD', 'GPS_RAW_INT', 'SYS_STATUS', 'BATTERY_STATUS']
+        print("Testing connection...")
+        for msg_type in important_messages:
+            message = self.connection.recv_match(type=msg_type, blocking=True)
+            print(f"{msg_type}: {message.to_dict()}" if message else f"No message for {msg_type}")
 
+def main():
+    mavlink_connection = MAVLinkConnection()
+    mavlink_connection.test_connection()
 
 if __name__ == "__main__":
     main()
