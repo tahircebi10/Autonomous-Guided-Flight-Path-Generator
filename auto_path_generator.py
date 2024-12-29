@@ -54,6 +54,44 @@ class MAVLinkConnection:
             time.sleep(0.1)
         return False
     
+    def clear_waypoints(self):
+        #Mevcut waypoint'leri temizle
+        self.connection.mav.mission_clear_all_send(
+            self.connection.target_system,
+            self.connection.target_component)
+        self.connection.recv_match(type=['MISSION_ACK'], blocking=True)
+
+    def upload_waypoints(self, waypoints):
+        #waypointleri geri yükleme
+        self.clear_waypoints()
+        
+        self.connection.mav.mission_count_send(
+            self.connection.target_system,
+            self.connection.target_component,
+            len(waypoints))
+        
+        for i, wp in enumerate(waypoints):#ennumerate ile itarasyon yapıyoruz
+            #ihanın isterlerine özellikleirne uygun dönüş yarıçağı vs paremetrelerin girilmesi
+            self.connection.mav.mission_item_send(
+                self.connection.target_system,
+                self.connection.target_component,
+                i,
+                mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,
+                0, 1,
+                2,  # Acceptance radius
+                5,  # Pass radius
+                0,  # Yaw
+                0,  # Empty
+                wp[0], wp[1], wp[2])
+            
+            self.connection.recv_match(type=['MISSION_REQUEST'], blocking=True)
+        
+        self.connection.recv_match(type=['MISSION_ACK'], blocking=True)
+        print(f"{len(waypoints)} waypoint yüklendi")
+    
+    
+    
     
 
 def main():
