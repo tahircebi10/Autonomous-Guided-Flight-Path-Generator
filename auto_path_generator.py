@@ -34,6 +34,27 @@ class MAVLinkConnection:
             print("No GLOBAL_POSITION_INT message received")
         return None
     
+    #mod değişikliği ve göreve hazırlık
+    def set_guided_mode(self):
+        mode = 'GUIDED'
+        mode_id = self.connection.mode_mapping()[mode]
+        
+        self.connection.mav.set_mode_send(
+            self.connection.target_system,
+            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+            mode_id)
+        
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            msg = self.connection.recv_match(type=['HEARTBEAT'], blocking=True)
+            #hearbeat dediğimiz tcp üzerinden hava aracının canlı verilerinin alınmasının kontrolü
+            if msg.custom_mode == mode_id:
+                print("GUIDED moda geçiş başarılı!")
+                return True
+            time.sleep(0.1)
+        return False
+    
+    
 
 def main():
     mavlink_connection = MAVLinkConnection()
